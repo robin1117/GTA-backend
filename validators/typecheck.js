@@ -19,10 +19,31 @@ export const checkoutSchema = z.object({
   address: z.string().min(1, "Address is required").trim(),
   city: z.string().min(1, "City is required").trim(),
   zip: z.string().min(5, "Invalid ZIP code").trim(),
-  paymentMethod: z.enum(["upi", "card", "cod"]),
+  paymentMethod: z.enum(["upi", "card", "cod", "razorpay"]),
   upiId: z.string().min(3, "Invalid UPI ID").trim().optional(),
   transactionRef: z.string().min(1, "Transaction reference is required"),
   hasPaid: z.boolean(),
+  razorpayPaymentId: z.string().trim().optional(),
+  razorpayOrderId: z.string().trim().optional(),
+  razorpaySignature: z.string().trim().optional(),
+});
+
+export const createRazorpayOrderSchema = checkoutSchema
+  .omit({
+    transactionRef: true,
+    hasPaid: true,
+    razorpayPaymentId: true,
+    razorpayOrderId: true,
+    razorpaySignature: true,
+  })
+  .extend({
+    paymentMethod: z.literal("razorpay"),
+  });
+
+export const verifyRazorpayPaymentSchema = createRazorpayOrderSchema.extend({
+  razorpayPaymentId: z.string().min(1, "Razorpay payment id is required"),
+  razorpayOrderId: z.string().min(1, "Razorpay order id is required"),
+  razorpaySignature: z.string().min(1, "Razorpay signature is required"),
 });
 
 export const isThisString = z.object({ search: z.string() });

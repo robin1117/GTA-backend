@@ -17,7 +17,7 @@ const cookieSecret = process.env.COOKIE_SECRET;
 if (!cookieSecret) {
   throw new Error("COOKIE_SECRET is required");
 }
-
+console.log(process.env.CLIENT_ORIGIN);
 // Global Middleware
 app.use(helmet()); // Secures HTTP headers
 app.use(
@@ -30,7 +30,6 @@ app.use(express.json()); // Parses incoming JSON requests
 
 app.use(cookieParser(cookieSecret));
 
-// Health Check Route
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
@@ -49,7 +48,6 @@ app.use((err, req, res, next) => {
     .json({ error: "Internal Server Error", message: err.message });
 });
 
-// Start Server
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });

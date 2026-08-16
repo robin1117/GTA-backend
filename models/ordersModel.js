@@ -42,8 +42,8 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      default: "upi",
-      enum: ["upi", "card", "cod", "netbanking"], // Restricts values to these options
+      default: "razorpay",
+      enum: ["upi", "card", "cod", "netbanking", "razorpay"],
     },
     upiId: {
       type: String,
@@ -61,6 +61,21 @@ const orderSchema = new mongoose.Schema(
     hasPaid: {
       type: Boolean,
       default: false,
+    },
+    razorpayPaymentId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    razorpayOrderId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    razorpaySignature: {
+      type: String,
+      trim: true,
+      default: "",
     },
   },
   {
