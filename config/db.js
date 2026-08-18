@@ -1,3 +1,6 @@
+import dns from "node:dns";
+dns.setServers(["1.1.1.1", "1.0.0.1"]);
+
 import mongoose from "mongoose";
 
 // 1. Connection logic
@@ -16,7 +19,6 @@ export async function connectDB() {
     process.exit(1);
   }
 }
-
 // 2. Clean Disconnect Function
 async function gracefulShutdown(signal) {
   try {
@@ -32,4 +34,3 @@ async function gracefulShutdown(signal) {
 // 3. Listen for Process Exit Signals
 process.on("SIGINT", () => gracefulShutdown("SIGINT")); // Triggered by Ctrl+C
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM")); // Triggered by hosting platforms (Heroku/Docker)
-

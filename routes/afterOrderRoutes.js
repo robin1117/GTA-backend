@@ -9,27 +9,30 @@ import Order from "../models/ordersModel.js";
 import { RazorPayInstance } from "../config/razorPay.js";
 
 let router = express.Router();
-const paymentAmount = Number(process.env.AMOUNT || process.env.VITE_AMOUNT || 299);
+const paymentAmount = Number(
+  process.env.AMOUNT || process.env.VITE_AMOUNT || 299,
+);
 const amountInPaise = Math.round(paymentAmount * 100);
 
 const saveOrder = async (orderDetails, res) => {
   try {
-    let doc = await Order.insertOne(orderDetails);
-    return res.json({
-      msg: "your Order has been confirmed",
-      orderId: doc.id,
-    });
-  } catch (error) {
-    if (error.code == 11000) {
-      let document = await Order.findOne({
-        $or: [{ email: orderDetails.email }, { phone: orderDetails.phone }],
-      });
+    let document = await Order.findOne({ hasPaid: true });
+    if (document) {
       return res.json({
         msg: "your order is already submited, it will take 1hr to process your Order",
         orderId: document.id,
       });
     }
-
+    let doc = await Order.findOneAndUpdate(
+      { phone: orderDetails.phone },
+      { $set: orderDetails },
+      { returnDocument: "after" },
+    );
+    return res.json({
+      msg: "your Order has been confirmed",
+      orderId: doc.id,
+    });
+  } catch (error) {
     throw error;
   }
 };
@@ -47,27 +50,45 @@ router.post("/create-razorpay-order", async (req, res, next) => {
         msg: "Razorpay credentials are missing on server.",
       });
     }
+    let doc = await Order.findOne({ phone: data.phone.toString() });
 
-    const razorpayOrder = await RazorPayInstance().orders.create({
-      amount: amountInPaise,
-      currency: "INR",
-      receipt: `gta_${Date.now()}`,
-      notes: {
-        email: data.email,
-        phone: data.phone,
-        fullname: data.fullname,
-      },
-    });
+    if (!doc) {
+      const razorpayOrder = await RazorPayInstance().orders.create({
+        amount: amountInPaise,
+        currency: "INR",
+        receipt: `gta_${Date.now()}`,
+        notes: {
+          email: data.email,
+          phone: data.phone,
+          fullname: data.fullname,
+        },
+      });
 
+      await Order.insertOne({
+        ...data,
+        razorpayOrderId: razorpayOrder.id,
+      });
+
+      return res.json({
+        success: true,
+        orderId: razorpayOrder.id,
+        key: process.env.RAZOR_KEY,
+      });
+    }
+
+    if (doc.hasPaid) {
+      return res.json({
+        msg: `your order ${doc.id} is already submited, it will take 1hr to process your Order`,
+        orderId: doc.id,
+      });
+    }
     return res.json({
       success: true,
-      orderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
+      orderId: doc.razorpayOrderId,
       key: process.env.RAZOR_KEY,
     });
   } catch (error) {
-    next(error);
+    console.log(error);
   }
 });
 
@@ -125,4 +146,5 @@ router.get("/thankyou", async (req, res) => {
     phone: document.phone,
   });
 });
+
 export default router;
