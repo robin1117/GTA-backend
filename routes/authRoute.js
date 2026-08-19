@@ -39,7 +39,7 @@ router.post("/login", async (req, res, next) => {
       maxAge: 1000 * 60 * 60,
       secure: cookieSecure,
       httpOnly: true, // Blocks XSS access
-      sameSite: "lax", // Protects against CSRF
+      sameSite: "none", // as my backend and frontend is on different origin 
       signed: true,
     });
     return res.status(200).json({ message: "Logged In Status", success: true });
